@@ -7,7 +7,6 @@
 #include <string.h>
 
 #define	LISTENQ		10
-#define	PORT		8419
 #define	MAX_LINE	4096
 
 void	ft_chat(int connfd)
@@ -15,7 +14,8 @@ void	ft_chat(int connfd)
 	int		br;
 	char	buff_rd[MAX_LINE];
 	char	buff_wr[MAX_LINE];
-
+	
+	write(connfd, "\033[32mEste é um canal privado sem sha256\033[0m\n", 46);
 	while ((br = read(connfd, buff_rd, MAX_LINE)))
 	{
 		write(STDOUT_FILENO, buff_rd, br);
@@ -26,9 +26,9 @@ void	ft_chat(int connfd)
 
 int	main(int argc, char *argv[])
 {
-	if (argc > 1)
+	if (argc != 2)
 	{
-		write(STDERR_FILENO, "mau uso do >_Daemon: ./servidor\n", 33);
+		write(STDERR_FILENO, "\033[31mmodo de uso do >_Daemon: ./servidor [porta]\033[0m\n", 54);
 		exit(EXIT_FAILURE);
 	}
 	(void)argv;
@@ -44,7 +44,7 @@ int	main(int argc, char *argv[])
 	memset(&servaddr, 0, sizeof(servaddr));
 	servaddr.sin_family = AF_INET;
 	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	servaddr.sin_port = htons(PORT);
+	servaddr.sin_port = htons(atoi(argv[1]));
 	bind(listfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
 	listen(listfd, LISTENQ);
 	while (1)
@@ -54,8 +54,9 @@ int	main(int argc, char *argv[])
 		if ((child = fork()) == 0)
 		{
 			close(listfd);
-			write(STDOUT_FILENO, "Este é um canal privado sem sha256\n", 37);
-			printf("conectado em ip: %s, porta: %d\n", 
+			write(STDOUT_FILENO, "\033[33mEste é um canal privado sem sha256\033[0m\n", 46);
+			write(STDOUT_FILENO, "\033[33mLimite de caracter por linha [ 4096 ]\033[0m\n", 48);
+			printf("\033[33mconectado em ip: %s, porta: %d\033[0m\n", 
 			inet_ntop(AF_INET, &clieaddr.sin_addr, buff, sizeof(buff)),
 			ntohs(clieaddr.sin_port));
 			ft_chat(connfd);
