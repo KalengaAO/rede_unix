@@ -43,11 +43,10 @@ int	main(int argc, char *argv[])
 	inet_pton(AF_INET, argv[2], &servaddr.sin_addr);
 	if (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0)
 	{
-			perror("conexão recusada!");
+			perror("em connect: conexão recusada!");
 			exit(EXIT_FAILURE);
 	}
 	ft_chat(sockfd);
 	close(sockfd);
 	exit(EXIT_SUCCESS);
-	return (0);
 }

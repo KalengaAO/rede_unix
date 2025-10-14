@@ -8,6 +8,7 @@
 
 #define	LISTENQ		10
 #define	MAX_LINE	4096
+#define MAX_FD		1024
 
 void	ft_chat(int connfd)
 {
