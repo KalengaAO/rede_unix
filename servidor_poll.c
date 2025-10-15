@@ -10,6 +10,10 @@
 #define	MAX_LINE	4096
 #define	LISTENQ		10
 #define	MAX_CLIENT	1024
+#define GREEN		"\033[1;32m"
+#define RED		"\033[1;31m"
+#define BLUE		"\033[1;34m"
+#define RESET		"\033[0m"
 
 void	new_client(struct pollfd *canal, int lstfd, int *max)
 {
@@ -21,10 +25,10 @@ void	new_client(struct pollfd *canal, int lstfd, int *max)
 
 	len = sizeof(cliaddr);
 	connfd = accept(lstfd, (struct sockaddr *)&cliaddr, &len);
-	printf("Nova conexão - ip: %s |  porta %d\n",
+	printf( RED "Nova conexão - ip: %s |  porta %d\n" RESET,
 			inet_ntop(AF_INET, (struct sockaddr *)&cliaddr.sin_addr, buff, sizeof(buff)),
 			ntohs(cliaddr.sin_port));
-	it = 0;
+	it = 1;
 	while (it < MAX_CLIENT)
 	{
 		if (canal[it].fd < 0)
@@ -39,26 +43,13 @@ void	new_client(struct pollfd *canal, int lstfd, int *max)
 	}
 }
 
-void	send_msg(struct pollfd *canal, int max)
+void	send_msg(int connfd)
 {
-	int		it;
-	int		connfd;
 	char	buff[MAX_LINE];
 
-	it = 2;
-	connfd = -1;
-	while (it <= max)
-	{
-		if (canal[it].revents & POLLIN)
-			connfd = canal[it].fd;
-		++it;
-	}
-	if (connfd != -1)
-	{
-		printf("use id %d: ", connfd);
-		if (fgets(buff, sizeof(buff), stdin))
-			write(connfd, buff, strlen(buff));
-	}
+	fprintf(stdout, GREEN "send user id %d: " RESET, connfd);
+	if (fgets(buff, sizeof(buff), stdin))
+		write(connfd, buff, strlen(buff));
 }
 
 bool	read_msg(int connfd)
@@ -68,13 +59,13 @@ bool	read_msg(int connfd)
 
 	if ((rdbytes = read(connfd, buff, MAX_LINE)) == 0)
 	{
-		printf("cliente desconectado %d\n", connfd);
+		printf(RED "cliente desconectado %d\n" RESET, connfd);
 		close(connfd);
 		return false;
 	}
 	buff[rdbytes] = '\0';
-	printf("user: %d ", connfd);
-	write(STDOUT_FILENO, buff, strlen(buff));
+	fprintf(stdout, BLUE "receive user id: %d: %s" RESET, connfd, buff);
+	send_msg(connfd);
 	return (true);
 }
 
@@ -115,28 +106,22 @@ int	main(int argc, char *argv[])
 	}
 	canal[0].fd = lstfd;
 	canal[0].events = POLLIN;
-	canal[1].fd = STDIN_FILENO;
-	canal[1].events = POLLIN;
-	max = 1;
+	max = 0;
 	while (true)
 	{
 		poll(canal, max + 1, -1);
 		if (canal[0].revents & POLLIN)
 			new_client(canal, lstfd, &max);
-		if (canal[1].revents & POLLIN)
-			send_msg(canal, max);
-		it = 2;
+		it = 1;
 		while (it <= max)
 		{
-			if (canal[it].fd > 0)
+			if ((canal[it].fd > 0) && (canal[it].revents & POLLIN))
 			{
-				if (canal[it].revents & POLLIN)
-					if (!read_msg(canal[it].fd))
-						canal[it].fd = -1;
+				if (!read_msg(canal[it].fd))
+					canal[it].fd = -1;
 			}
 			++it;
 		}
-		canal[it].revents = 0;
 	}	
 	return (0);
 }
